@@ -3075,6 +3075,15 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     return DecodeGCOpcode(full_opcode);
   }
 
+  DECODE(Hint) {
+    uint32_t opcode_length = 0;
+    WasmOpcode full_opcode = this->template read_prefixed_opcode<validate>(
+        this->pc_, &opcode_length);
+    if (!VALIDATE(this->ok())) return 0;
+    trace_msg->AppendOpcode(full_opcode);
+    return DecodeHintOpcode(full_opcode, 1 + opcode_length);
+  }
+
 #define SIMPLE_PROTOTYPE_CASE(name, opc, sig) \
   DECODE(name) { return BuildSimplePrototypeOperator(opcode); }
   FOREACH_SIMPLE_PROTOTYPE_OPCODE(SIMPLE_PROTOTYPE_CASE)
@@ -3578,6 +3587,19 @@ class WasmFullDecoder : public WasmDecoder<validate> {
             sig->return_count() == 0 ? nullptr : Push(GetReturnType(sig));
         CALL_INTERFACE_IF_REACHABLE(SimdOp, opcode, VectorOf(args), results);
         return opcode_length;
+      }
+    }
+  }
+
+  uint32_t DecodeHintOpcode(WasmOpcode opcode, uint32_t opcode_length) {
+    // opcode_length is the number of bytes that this Hint opcode takes
+    // up in the LEB128 encoded form.
+    switch (opcode) {
+      case kExprHintIf:
+        return this->DecodeIf(opcode&0xff);
+      default: {
+        this->DecodeError("invalid hint opcode");
+        return 0;
       }
     }
   }

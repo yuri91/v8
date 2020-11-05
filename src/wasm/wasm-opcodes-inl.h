@@ -385,11 +385,15 @@ constexpr const char* WasmOpcodes::OpcodeName(WasmOpcode opcode) {
     CASE_OP(RefEq, "ref.eq")
     CASE_OP(Let, "let")
 
+    // Hints
+    CASE_OP(HintIf, "hint.if")
+
 
     case kNumericPrefix:
     case kSimdPrefix:
     case kAtomicPrefix:
     case kGCPrefix:
+    case kHintPrefix:
       return "unknown";
     // clang-format on
   }

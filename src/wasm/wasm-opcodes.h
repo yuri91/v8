@@ -637,6 +637,9 @@ bool V8_EXPORT_PRIVATE IsJSCompatibleSignature(const FunctionSig* sig,
   V(RefCast, 0xfb41, _)          \
   V(BrOnCast, 0xfb42, _)
 
+#define FOREACH_HINT_OPCODE(V)   \
+  V(HintIf, 0x1604, _)
+
 #define FOREACH_ATOMIC_0_OPERAND_OPCODE(V)                      \
   /* AtomicFence does not target a particular linear memory. */ \
   V(AtomicFence, 0xfe03, v_v)
@@ -660,7 +663,8 @@ bool V8_EXPORT_PRIVATE IsJSCompatibleSignature(const FunctionSig* sig,
   FOREACH_ATOMIC_OPCODE(V)            \
   FOREACH_ATOMIC_0_OPERAND_OPCODE(V)  \
   FOREACH_NUMERIC_OPCODE(V)           \
-  FOREACH_GC_OPCODE(V)
+  FOREACH_GC_OPCODE(V)                \
+  FOREACH_HINT_OPCODE(V)
 
 // All signatures.
 #define FOREACH_SIGNATURE(V)                        \
@@ -722,7 +726,8 @@ bool V8_EXPORT_PRIVATE IsJSCompatibleSignature(const FunctionSig* sig,
   V(Numeric, 0xfc)        \
   V(Simd, 0xfd)           \
   V(Atomic, 0xfe)         \
-  V(GC, 0xfb)
+  V(GC, 0xfb)             \
+  V(Hint, 0x16)
 
 enum WasmOpcode {
 // Declare expression opcodes.
