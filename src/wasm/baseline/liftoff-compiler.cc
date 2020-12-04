@@ -5319,11 +5319,14 @@ WasmCompilationResult ExecuteLiftoffCompilation(
   if (debug_sidetable) {
     debug_sidetable_builder = std::make_unique<DebugSideTableBuilder>();
   }
+  auto branch_hints_it = env->module->branch_hints.find(func_index);
+  auto* branch_hints = branch_hints_it == env->module->branch_hints.end() ?
+                                          nullptr : &branch_hints_it->second;
   WasmFullDecoder<Decoder::kBooleanValidation, LiftoffCompiler> decoder(
       &zone, env->module, env->enabled_features, detected, func_body,
-      call_descriptor, env, &zone, instruction_buffer->CreateView(),
-      debug_sidetable_builder.get(), for_debugging, func_index, breakpoints,
-      dead_breakpoint);
+      branch_hints, call_descriptor, env, &zone,
+      instruction_buffer->CreateView(), debug_sidetable_builder.get(),
+      for_debugging, func_index, breakpoints, dead_breakpoint);
   decoder.Decode();
   LiftoffCompiler* compiler = &decoder.interface();
   if (decoder.failed()) compiler->OnFirstError(&decoder);
@@ -5372,9 +5375,12 @@ std::unique_ptr<DebugSideTable> GenerateLiftoffDebugSideTable(
   auto call_descriptor = compiler::GetWasmCallDescriptor(&zone, func_body.sig);
   DebugSideTableBuilder debug_sidetable_builder;
   WasmFeatures detected;
+  auto branch_hints_it = env->module->branch_hints.find(func_index);
+  auto* branch_hints = branch_hints_it == env->module->branch_hints.end() ?
+                                          nullptr : &branch_hints_it->second;
   WasmFullDecoder<Decoder::kBooleanValidation, LiftoffCompiler> decoder(
       &zone, env->module, env->enabled_features, &detected, func_body,
-      call_descriptor, env, &zone,
+      branch_hints, call_descriptor, env, &zone,
       NewAssemblerBuffer(AssemblerBase::kDefaultBufferSize),
       &debug_sidetable_builder, kForDebugging, func_index);
   decoder.Decode();

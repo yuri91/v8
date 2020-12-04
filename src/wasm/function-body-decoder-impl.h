@@ -2205,9 +2205,12 @@ class WasmFullDecoder : public WasmDecoder<validate> {
   template <typename... InterfaceArgs>
   WasmFullDecoder(Zone* zone, const WasmModule* module,
                   const WasmFeatures& enabled, WasmFeatures* detected,
-                  const FunctionBody& body, InterfaceArgs&&... interface_args)
+                  const FunctionBody& body,
+                  const std::vector<WasmBranchHint>* branch_hints,
+                  InterfaceArgs&&... interface_args)
       : WasmDecoder<validate>(zone, module, enabled, detected, body.sig,
                               body.start, body.end, body.offset),
+        branch_hints(branch_hints),
         interface_(std::forward<InterfaceArgs>(interface_args)...),
         control_(zone) {}
 
@@ -2310,7 +2313,17 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     }
   }
 
+  inline const std::vector<WasmBranchHint>* getBranchHints() const {
+    return branch_hints;
+  }
+
+  inline uint32_t getLastBranchIdx() const {
+    return last_branch_idx;
+  }
+
  private:
+  const std::vector<WasmBranchHint>* branch_hints;
+  uint32_t last_branch_idx = 0;
   Interface interface_;
 
   // The value stack, stored as individual pointers for maximum performance.
@@ -2680,6 +2693,7 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     SetBlockType(if_block, imm, args.begin());
     CALL_INTERFACE_IF_REACHABLE(If, cond, if_block);
     PushMergeValues(if_block, &if_block->start_merge);
+    last_branch_idx++;
     return 1 + imm.length;
   }
 

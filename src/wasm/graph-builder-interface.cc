@@ -236,7 +236,21 @@ class WasmGraphBuildingInterface {
   void If(FullDecoder* decoder, const Value& cond, Control* if_block) {
     TFNode* if_true = nullptr;
     TFNode* if_false = nullptr;
-    BUILD(BranchNoHint, cond.node, &if_true, &if_false);
+    WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
+    if(decoder->getBranchHints() != nullptr) {
+      dir = (*decoder->getBranchHints())[decoder->getLastBranchIdx()].direction;
+    }
+    switch(dir) {
+      case WasmBranchHintDirection::kNoHint:
+        BUILD(BranchNoHint, cond.node, &if_true, &if_false);
+        break;
+      case WasmBranchHintDirection::kFalse:
+        BUILD(BranchExpectFalse, cond.node, &if_true, &if_false);
+        break;
+      case WasmBranchHintDirection::kTrue:
+        BUILD(BranchExpectTrue, cond.node, &if_true, &if_false);
+        break;
+    }
     SsaEnv* end_env = ssa_env_;
     SsaEnv* false_env = Split(decoder->zone(), ssa_env_);
     false_env->control = if_false;
@@ -1424,10 +1438,11 @@ DecodeResult BuildTFGraph(AccountingAllocator* allocator,
                           const WasmFeatures& enabled, const WasmModule* module,
                           compiler::WasmGraphBuilder* builder,
                           WasmFeatures* detected, const FunctionBody& body,
+                          const std::vector<WasmBranchHint>* branch_hints,
                           compiler::NodeOriginTable* node_origins) {
   Zone zone(allocator, ZONE_NAME);
   WasmFullDecoder<Decoder::kFullValidation, WasmGraphBuildingInterface> decoder(
-      &zone, module, enabled, detected, body, builder);
+      &zone, module, enabled, detected, body, branch_hints, builder);
   if (node_origins) {
     builder->AddBytecodePositionDecorator(node_origins, &decoder);
   }

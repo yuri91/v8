@@ -6,6 +6,7 @@
 #define V8_WASM_WASM_MODULE_H_
 
 #include <memory>
+#include <unordered_map>
 
 #include "src/base/optional.h"
 #include "src/base/platform/wrappers.h"
@@ -167,6 +168,17 @@ struct WasmCompilationHint {
   WasmCompilationHintStrategy strategy;
   WasmCompilationHintTier baseline_tier;
   WasmCompilationHintTier top_tier;
+};
+
+enum class WasmBranchHintDirection : uint8_t {
+  kNoHint = 0,
+  kFalse = 1,
+  kTrue = 2,
+};
+
+// Static representation of a wasm branch hint
+struct WasmBranchHint {
+  WasmBranchHintDirection direction;
 };
 
 enum ModuleOrigin : uint8_t {
@@ -331,6 +343,7 @@ struct V8_EXPORT_PRIVATE WasmModule {
   std::vector<WasmException> exceptions;
   std::vector<WasmElemSegment> elem_segments;
   std::vector<WasmCompilationHint> compilation_hints;
+  std::unordered_map<uint32_t, std::vector<WasmBranchHint>> branch_hints;
   SignatureMap signature_map;  // canonicalizing map for signature indexes.
 
   ModuleOrigin origin = kWasmOrigin;  // origin of the module
