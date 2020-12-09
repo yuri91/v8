@@ -523,7 +523,21 @@ class WasmGraphBuildingInterface {
     SsaEnv* fenv = ssa_env_;
     SsaEnv* tenv = Split(decoder->zone(), fenv);
     fenv->SetNotMerged();
-    BUILD(BranchNoHint, cond.node, &tenv->control, &fenv->control);
+    WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
+    if(decoder->getBranchHints() != nullptr) {
+      dir = (*decoder->getBranchHints())[decoder->getLastBranchIdx()].direction;
+    }
+    switch(dir) {
+      case WasmBranchHintDirection::kNoHint:
+        BUILD(BranchNoHint, cond.node, &tenv->control, &fenv->control);
+        break;
+      case WasmBranchHintDirection::kFalse:
+        BUILD(BranchExpectFalse, cond.node, &tenv->control, &fenv->control);
+        break;
+      case WasmBranchHintDirection::kTrue:
+        BUILD(BranchExpectTrue, cond.node, &tenv->control, &fenv->control);
+        break;
+    }
     builder_->SetControl(fenv->control);
     SetEnv(tenv);
     BrOrRet(decoder, depth);
