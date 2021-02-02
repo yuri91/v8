@@ -237,8 +237,10 @@ class WasmGraphBuildingInterface {
     TFNode* if_true = nullptr;
     TFNode* if_false = nullptr;
     WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
-    if(decoder->getBranchHints() != nullptr) {
-      dir = (*decoder->getBranchHints())[decoder->getLastBranchIdx()].direction;
+    printf("pc offset %d\n", decoder->pc_offset());
+    printf("pc relative offset %d\n", decoder->pc_relative_offset());
+    if(auto* hints = decoder->getBranchHints()) {
+      dir = hints->GetHintFor(decoder->pc_relative_offset());
     }
     switch(dir) {
       case WasmBranchHintDirection::kNoHint:
@@ -524,8 +526,10 @@ class WasmGraphBuildingInterface {
     SsaEnv* tenv = Split(decoder->zone(), fenv);
     fenv->SetNotMerged();
     WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
-    if(decoder->getBranchHints() != nullptr) {
-      dir = (*decoder->getBranchHints())[decoder->getLastBranchIdx()].direction;
+    printf("pc offset %d\n", decoder->pc_offset());
+    printf("pc relative offset %d\n", decoder->pc_relative_offset());
+    if(auto* hints = decoder->getBranchHints()) {
+      dir = hints->GetHintFor(decoder->pc_relative_offset());
     }
     switch(dir) {
       case WasmBranchHintDirection::kNoHint:
@@ -1452,7 +1456,7 @@ DecodeResult BuildTFGraph(AccountingAllocator* allocator,
                           const WasmFeatures& enabled, const WasmModule* module,
                           compiler::WasmGraphBuilder* builder,
                           WasmFeatures* detected, const FunctionBody& body,
-                          const std::vector<WasmBranchHint>* branch_hints,
+                          const BranchHintMap* branch_hints,
                           compiler::NodeOriginTable* node_origins) {
   Zone zone(allocator, ZONE_NAME);
   WasmFullDecoder<Decoder::kFullValidation, WasmGraphBuildingInterface> decoder(

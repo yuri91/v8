@@ -17,6 +17,7 @@
 #include "src/wasm/struct-types.h"
 #include "src/wasm/wasm-constants.h"
 #include "src/wasm/wasm-opcodes.h"
+#include "src/wasm/branch-hint-map.h"
 
 namespace v8 {
 
@@ -168,23 +169,6 @@ struct WasmCompilationHint {
   WasmCompilationHintStrategy strategy;
   WasmCompilationHintTier baseline_tier;
   WasmCompilationHintTier top_tier;
-};
-
-enum class WasmBranchHintDirection : uint8_t {
-  kNoHint = 0,
-  kFalse = 1,
-  kTrue = 2,
-};
-
-// Static representation of a wasm branch hint
-struct WasmBranchHint {
-  WasmBranchHintDirection direction;
-};
-
-enum ModuleOrigin : uint8_t {
-  kWasmOrigin,
-  kAsmJsSloppyOrigin,
-  kAsmJsStrictOrigin
 };
 
 #define SELECT_WASM_COUNTER(counters, origin, prefix, suffix)     \
@@ -343,7 +327,7 @@ struct V8_EXPORT_PRIVATE WasmModule {
   std::vector<WasmException> exceptions;
   std::vector<WasmElemSegment> elem_segments;
   std::vector<WasmCompilationHint> compilation_hints;
-  std::unordered_map<uint32_t, std::vector<WasmBranchHint>> branch_hints;
+  BranchHintInfo branch_hints;
   SignatureMap signature_map;  // canonicalizing map for signature indexes.
 
   ModuleOrigin origin = kWasmOrigin;  // origin of the module

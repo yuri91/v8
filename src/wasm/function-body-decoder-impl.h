@@ -2206,7 +2206,7 @@ class WasmFullDecoder : public WasmDecoder<validate> {
   WasmFullDecoder(Zone* zone, const WasmModule* module,
                   const WasmFeatures& enabled, WasmFeatures* detected,
                   const FunctionBody& body,
-                  const std::vector<WasmBranchHint>* branch_hints,
+                  const BranchHintMap* branch_hints,
                   InterfaceArgs&&... interface_args)
       : WasmDecoder<validate>(zone, module, enabled, detected, body.sig,
                               body.start, body.end, body.offset),
@@ -2313,17 +2313,17 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     }
   }
 
-  inline const std::vector<WasmBranchHint>* getBranchHints() const {
+  inline const BranchHintMap* getBranchHints() const {
     return branch_hints;
   }
 
-  inline uint32_t getLastBranchIdx() const {
-    return last_branch_idx;
+  inline uint32_t pc_relative_offset() const {
+    return this->pc_offset() - first_instruction_offset;
   }
 
  private:
-  const std::vector<WasmBranchHint>* branch_hints;
-  uint32_t last_branch_idx = 0;
+  const BranchHintMap* branch_hints;
+  uint32_t first_instruction_offset = 0;
   Interface interface_;
 
   // The value stack, stored as individual pointers for maximum performance.
@@ -2693,7 +2693,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     SetBlockType(if_block, imm, args.begin());
     CALL_INTERFACE_IF_REACHABLE(If, cond, if_block);
     PushMergeValues(if_block, &if_block->start_merge);
-    last_branch_idx++;
     return 1 + imm.length;
   }
 
@@ -2825,7 +2824,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
       CALL_INTERFACE_IF_REACHABLE(BrIf, cond, imm.depth);
       c->br_merge()->reached = true;
     }
-    last_branch_idx++;
     return 1 + imm.length;
   }
 
@@ -3394,6 +3392,7 @@ class WasmFullDecoder : public WasmDecoder<validate> {
       CALL_INTERFACE(StartFunctionBody, c);
     }
 
+    first_instruction_offset = this->pc_offset();
     // Decode the function body.
     while (this->pc_ < this->end_) {
       // Most operations only grow the stack by at least one element (unary and

@@ -1189,17 +1189,30 @@ class ModuleDecoderImpl : public Decoder {
       set_seen_unordered_section(kBranchHintsSectionCode);
       // Use an inner decoder so that errors don't fail the outer decoder.
       Decoder inner(start_, pc_, end_, buffer_offset_);
-      std::unordered_map<uint32_t, std::vector<WasmBranchHint>> branch_hints;
+      BranchHintInfo branch_hints;
 
       while (inner.ok() && inner.more()) {
         uint32_t func_idx = inner.consume_u32v("function index");
         uint32_t num_hints = inner.consume_u32v("number of hints");
-        std::vector<WasmBranchHint> func_branch_hints;
+        BranchHintMap func_branch_hints;
         printf("function %d:\n", func_idx);
         for (uint32_t i = 0; i < num_hints; ++i) {
+          uint32_t br_off = inner.consume_u32v("branch instruction offset");
           uint32_t br_dir = inner.consume_u32v("branch direction");
-          printf("\t branch %d dir %d\n", i, br_dir);
-          func_branch_hints.push_back(WasmBranchHint{static_cast<WasmBranchHintDirection>(br_dir)});
+          printf("\t branch %d dir %d\n", br_off, br_dir);
+          WasmBranchHintDirection dir;
+          switch(br_dir) {
+            case 0:
+              dir = WasmBranchHintDirection::kFalse;
+              break;
+            case 1:
+              dir = WasmBranchHintDirection::kTrue;
+              break;
+            default:
+              dir = WasmBranchHintDirection::kNoHint;
+              break;
+          }
+          func_branch_hints.insert(br_off, WasmBranchHint{dir});
         }
         branch_hints.emplace(func_idx, std::move(func_branch_hints));
         module_->branch_hints = std::move(branch_hints);
