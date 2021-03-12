@@ -2825,6 +2825,7 @@ class WasmFullDecoder : public WasmDecoder<validate> {
       CALL_INTERFACE_IF_REACHABLE(BrIf, cond, imm.depth);
       c->br_merge()->reached = true;
     }
+    last_branch_idx++;
     return 1 + imm.length;
   }
 
