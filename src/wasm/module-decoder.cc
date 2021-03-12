@@ -1189,11 +1189,6 @@ class ModuleDecoderImpl : public Decoder {
       set_seen_unordered_section(kBranchHintsSectionCode);
       // Use an inner decoder so that errors don't fail the outer decoder.
       Decoder inner(start_, pc_, end_, buffer_offset_);
-      // Decode all name subsections.
-      // Be lenient with their order.
-      uint32_t num_funcs = inner.consume_u32v("number of funtions");
-      (void)num_funcs;
-      printf("we have %d functions hinted\n", num_funcs);
       std::unordered_map<uint32_t, std::vector<WasmBranchHint>> branch_hints;
 
       while (inner.ok() && inner.more()) {
