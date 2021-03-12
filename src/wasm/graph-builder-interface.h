@@ -9,7 +9,9 @@
 #ifndef V8_WASM_GRAPH_BUILDER_INTERFACE_H_
 #define V8_WASM_GRAPH_BUILDER_INTERFACE_H_
 
+#include "src/wasm/branch-hint-map.h"
 #include "src/wasm/decoder.h"
+#include "src/wasm/wasm-module.h"
 #include "src/wasm/wasm-opcodes.h"
 #include "src/wasm/wasm-result.h"
 
@@ -33,7 +35,7 @@ BuildTFGraph(AccountingAllocator* allocator, const WasmFeatures& enabled,
              const WasmModule* module, compiler::WasmGraphBuilder* builder,
              WasmFeatures* detected, const FunctionBody& body,
              std::vector<compiler::WasmLoopInfo>* loop_infos,
-             compiler::NodeOriginTable* node_origins);
+             compiler::NodeOriginTable* node_origins, int func_index);
 
 }  // namespace wasm
 }  // namespace internal

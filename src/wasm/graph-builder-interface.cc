@@ -110,10 +110,18 @@ class WasmGraphBuildingInterface {
         : ControlBase(std::forward<Args>(args)...) {}
   };
 
-  explicit WasmGraphBuildingInterface(compiler::WasmGraphBuilder* builder)
-      : builder_(builder) {}
+  explicit WasmGraphBuildingInterface(compiler::WasmGraphBuilder* builder,
+                                      int func_index)
+      : builder_(builder), func_index_(func_index) {}
 
   void StartFunction(FullDecoder* decoder) {
+    // Get the branch hints map for this function (if available)
+    if (decoder->module_) {
+      auto branch_hints_it = decoder->module_->branch_hints.find(func_index_);
+      if (branch_hints_it != decoder->module_->branch_hints.end()) {
+        branch_hints_ = &branch_hints_it->second;
+      }
+    }
     // The first '+ 1' is needed by TF Start node, the second '+ 1' is for the
     // instance parameter.
     TFNode* start = builder_->Start(
@@ -248,7 +256,21 @@ class WasmGraphBuildingInterface {
   void If(FullDecoder* decoder, const Value& cond, Control* if_block) {
     TFNode* if_true = nullptr;
     TFNode* if_false = nullptr;
-    builder_->BranchNoHint(cond.node, &if_true, &if_false);
+    WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
+    if (branch_hints_) {
+      dir = branch_hints_->GetHintFor(decoder->pc_relative_offset()).direction;
+    }
+    switch (dir) {
+      case WasmBranchHintDirection::kNoHint:
+        builder_->BranchNoHint(cond.node, &if_true, &if_false);
+        break;
+      case WasmBranchHintDirection::kFalse:
+        builder_->BranchExpectFalse(cond.node, &if_true, &if_false);
+        break;
+      case WasmBranchHintDirection::kTrue:
+        builder_->BranchExpectTrue(cond.node, &if_true, &if_false);
+        break;
+    }
     SsaEnv* end_env = ssa_env_;
     SsaEnv* false_env = Split(decoder->zone(), ssa_env_);
     false_env->control = if_false;
@@ -488,7 +510,21 @@ class WasmGraphBuildingInterface {
     SsaEnv* fenv = ssa_env_;
     SsaEnv* tenv = Split(decoder->zone(), fenv);
     fenv->SetNotMerged();
-    builder_->BranchNoHint(cond.node, &tenv->control, &fenv->control);
+    WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
+    if (branch_hints_) {
+      dir = branch_hints_->GetHintFor(decoder->pc_relative_offset()).direction;
+    }
+    switch (dir) {
+      case WasmBranchHintDirection::kNoHint:
+        builder_->BranchNoHint(cond.node, &tenv->control, &fenv->control);
+        break;
+      case WasmBranchHintDirection::kFalse:
+        builder_->BranchExpectFalse(cond.node, &tenv->control, &fenv->control);
+        break;
+      case WasmBranchHintDirection::kTrue:
+        builder_->BranchExpectTrue(cond.node, &tenv->control, &fenv->control);
+        break;
+    }
     builder_->SetControl(fenv->control);
     SetEnv(tenv);
     BrOrRet(decoder, depth, 1);
@@ -1086,6 +1122,8 @@ class WasmGraphBuildingInterface {
  private:
   SsaEnv* ssa_env_ = nullptr;
   compiler::WasmGraphBuilder* builder_;
+  int func_index_;
+  const BranchHintMap* branch_hints_ = nullptr;
   uint32_t current_catch_ = kNullCatch;
   // Tracks loop data for loop unrolling.
   std::vector<compiler::WasmLoopInfo> loop_infos_;
@@ -1529,10 +1567,11 @@ DecodeResult BuildTFGraph(AccountingAllocator* allocator,
                           compiler::WasmGraphBuilder* builder,
                           WasmFeatures* detected, const FunctionBody& body,
                           std::vector<compiler::WasmLoopInfo>* loop_infos,
-                          compiler::NodeOriginTable* node_origins) {
+                          compiler::NodeOriginTable* node_origins,
+                          int func_index) {
   Zone zone(allocator, ZONE_NAME);
   WasmFullDecoder<Decoder::kFullValidation, WasmGraphBuildingInterface> decoder(
-      &zone, module, enabled, detected, body, builder);
+      &zone, module, enabled, detected, body, builder, func_index);
   if (node_origins) {
     builder->AddBytecodePositionDecorator(node_origins, &decoder);
   }
