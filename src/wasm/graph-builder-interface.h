@@ -8,6 +8,7 @@
 #include "src/wasm/decoder.h"
 #include "src/wasm/wasm-opcodes.h"
 #include "src/wasm/wasm-result.h"
+#include "src/wasm/wasm-module.h"
 
 namespace v8 {
 namespace internal {
@@ -27,6 +28,7 @@ V8_EXPORT_PRIVATE DecodeResult
 BuildTFGraph(AccountingAllocator* allocator, const WasmFeatures& enabled,
              const WasmModule* module, compiler::WasmGraphBuilder* builder,
              WasmFeatures* detected, const FunctionBody& body,
+             const std::vector<WasmBranchHint>* branch_hints,
              compiler::NodeOriginTable* node_origins);
 
 }  // namespace wasm
