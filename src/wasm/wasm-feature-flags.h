@@ -33,7 +33,11 @@
   /* Memory64 proposal. */                                                     \
   /* https://github.com/WebAssembly/memory64 */                                \
   /* V8 side owner: clemensb */                                                \
-  V(memory64, "memory64", false)
+  V(memory64, "memory64", false)                                               \
+  /* Branch Hinting proposal. */                                               \
+  /* https://github.com/WebAssembly/branch-hinting */                          \
+  /* V8 side owner: jkummerow */                                               \
+  V(branch_hinting, "branch hinting", false)
 
 // #############################################################################
 // Staged features (disabled by default, but enabled via --wasm-staging (also

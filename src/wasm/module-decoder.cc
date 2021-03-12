@@ -510,7 +510,13 @@ class ModuleDecoderImpl : public Decoder {
         }
         break;
       case kBranchHintsSectionCode:
-        DecodeBranchHintsSection();
+        if (enabled_features_.has_branch_hinting()) {
+          DecodeBranchHintsSection();
+        } else {
+          // Ignore this section when feature was disabled. It is an optional
+          // custom section anyways.
+          consume_bytes(static_cast<uint32_t>(end_ - start_), nullptr);
+        }
         break;
       case kDataCountSectionCode:
         DecodeDataCountSection();
@@ -1195,11 +1201,11 @@ class ModuleDecoderImpl : public Decoder {
         uint32_t func_idx = inner.consume_u32v("function index");
         uint32_t num_hints = inner.consume_u32v("number of hints");
         BranchHintMap func_branch_hints;
-        printf("function %d:\n", func_idx);
+        TRACE("DecodeBranchHints[%d] module+%d\n", func_idx, static_cast<int>(pc_ - start_));
         for (uint32_t i = 0; i < num_hints; ++i) {
           uint32_t br_off = inner.consume_u32v("branch instruction offset");
           uint32_t br_dir = inner.consume_u32v("branch direction");
-          printf("\t branch %d dir %d\n", br_off, br_dir);
+          TRACE("DecodeBranchHints[%d][%d] module+%d\n", func_idx, br_off, static_cast<int>(pc_ - start_));
           WasmBranchHintDirection dir;
           switch(br_dir) {
             case 0:
@@ -1218,7 +1224,7 @@ class ModuleDecoderImpl : public Decoder {
         module_->branch_hints = std::move(branch_hints);
       }
     }
-    // Skip the whole names section in the outer decoder.
+    // Skip the whole branch hints section in the outer decoder.
     consume_bytes(static_cast<uint32_t>(end_ - start_), nullptr);
   }
 
