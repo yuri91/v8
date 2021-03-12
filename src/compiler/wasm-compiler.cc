@@ -7895,13 +7895,9 @@ bool BuildGraphForWasmFunction(AccountingAllocator* allocator,
   // Create a TF graph during decoding.
   WasmGraphBuilder builder(env, mcgraph->zone(), mcgraph, func_body.sig,
                            source_positions);
-  auto branch_hints_it = env->module->branch_hints.find(func_index);
-  auto* branch_hints = branch_hints_it == env->module->branch_hints.end() ?
-                                          nullptr : &branch_hints_it->second;
   wasm::VoidResult graph_construction_result =
       wasm::BuildTFGraph(allocator, env->enabled_features, env->module,
-                         &builder, detected, func_body,
-                         branch_hints, node_origins);
+                         &builder, detected, func_body, node_origins, func_index);
   if (graph_construction_result.failed()) {
     if (FLAG_trace_wasm_compiler) {
       StdoutStream{} << "Compilation failed: "

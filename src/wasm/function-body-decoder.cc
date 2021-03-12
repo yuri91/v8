@@ -56,7 +56,7 @@ DecodeResult VerifyWasmCode(AccountingAllocator* allocator,
                             const FunctionBody& body) {
   Zone zone(allocator, ZONE_NAME);
   WasmFullDecoder<Decoder::kFullValidation, EmptyInterface> decoder(
-      &zone, module, enabled, detected, body, nullptr);
+      &zone, module, enabled, detected, body);
   decoder.Decode();
   return decoder.toResult(nullptr);
 }

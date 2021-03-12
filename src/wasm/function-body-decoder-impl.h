@@ -2205,12 +2205,9 @@ class WasmFullDecoder : public WasmDecoder<validate> {
   template <typename... InterfaceArgs>
   WasmFullDecoder(Zone* zone, const WasmModule* module,
                   const WasmFeatures& enabled, WasmFeatures* detected,
-                  const FunctionBody& body,
-                  const BranchHintMap* branch_hints,
-                  InterfaceArgs&&... interface_args)
+                  const FunctionBody& body, InterfaceArgs&&... interface_args)
       : WasmDecoder<validate>(zone, module, enabled, detected, body.sig,
                               body.start, body.end, body.offset),
-        branch_hints(branch_hints),
         interface_(std::forward<InterfaceArgs>(interface_args)...),
         control_(zone) {}
 
@@ -2313,16 +2310,11 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     }
   }
 
-  inline const BranchHintMap* getBranchHints() const {
-    return branch_hints;
-  }
-
   inline uint32_t pc_relative_offset() const {
     return this->pc_offset() - first_instruction_offset;
   }
 
  private:
-  const BranchHintMap* branch_hints;
   uint32_t first_instruction_offset = 0;
   Interface interface_;
 
