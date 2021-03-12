@@ -237,8 +237,6 @@ class WasmGraphBuildingInterface {
     TFNode* if_true = nullptr;
     TFNode* if_false = nullptr;
     WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
-    printf("pc offset %d\n", decoder->pc_offset());
-    printf("pc relative offset %d\n", decoder->pc_relative_offset());
     if(auto* hints = decoder->getBranchHints()) {
       dir = hints->GetHintFor(decoder->pc_relative_offset()).direction;
     }
@@ -526,8 +524,6 @@ class WasmGraphBuildingInterface {
     SsaEnv* tenv = Split(decoder->zone(), fenv);
     fenv->SetNotMerged();
     WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
-    printf("pc offset %d\n", decoder->pc_offset());
-    printf("pc relative offset %d\n", decoder->pc_relative_offset());
     if(auto* hints = decoder->getBranchHints()) {
       dir = hints->GetHintFor(decoder->pc_relative_offset()).direction;
     }
