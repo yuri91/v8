@@ -123,9 +123,12 @@ class WasmGraphBuildingInterface {
   void StartFunction(FullDecoder* decoder) {
 
     // Get the branch hints map for this function (if available)
-    auto branch_hints_it = decoder->module_->branch_hints.find(func_index_);
-    branch_hints_ = branch_hints_it == decoder->module_->branch_hints.end() ?
-                                          nullptr : &branch_hints_it->second;
+    if (decoder->module_) {
+      auto branch_hints_it = decoder->module_->branch_hints.find(func_index_);
+      if (branch_hints_it != decoder->module_->branch_hints.end()) {
+        branch_hints_ = &branch_hints_it->second;
+      }
+    }
     // The first '+ 1' is needed by TF Start node, the second '+ 1' is for the
     // instance parameter.
     TFNode* start = builder_->Start(
