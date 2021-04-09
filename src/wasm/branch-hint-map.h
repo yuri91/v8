@@ -1,4 +1,4 @@
-// Copyright 2016 the V8 project authors. All rights reserved.
+// Copyright 2021 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,15 +12,10 @@ namespace internal {
 
 namespace wasm {
 
-enum class WasmBranchHintDirection : uint8_t {
+enum class WasmBranchHint : uint8_t {
   kNoHint = 0,
-  kFalse = 1,
-  kTrue = 2,
-};
-
-// Static representation of a wasm branch hint
-struct WasmBranchHint {
-  WasmBranchHintDirection direction;
+  kUnlikely = 1,
+  kLikely = 2,
 };
 
 class V8_EXPORT_PRIVATE BranchHintMap {
@@ -31,7 +26,7 @@ class V8_EXPORT_PRIVATE BranchHintMap {
   WasmBranchHint GetHintFor(uint32_t offset) const {
     auto it = map_.find(offset);
     if (it == map_.end()) {
-      return WasmBranchHint{WasmBranchHintDirection::kNoHint};
+      return WasmBranchHint::kNoHint;
     }
     return it->second;
   }

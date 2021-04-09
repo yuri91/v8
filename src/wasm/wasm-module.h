@@ -10,7 +10,6 @@
 #define V8_WASM_WASM_MODULE_H_
 
 #include <memory>
-#include <unordered_map>
 
 #include "src/base/optional.h"
 #include "src/base/platform/wrappers.h"
