@@ -1203,7 +1203,7 @@ class ModuleDecoderImpl : public Decoder {
       BranchHintInfo branch_hints;
 
       uint32_t func_count = inner.consume_u32v("number of functions");
-      for (uint32_t i = 0; inner.ok() && i < func_count; i++) {
+      for (uint32_t i = 0; i < func_count; i++) {
         uint32_t func_idx = inner.consume_u32v("function index");
         uint8_t reserved = inner.consume_u8("reserved byte");
         if (reserved != 0x0) {
@@ -1214,41 +1214,42 @@ class ModuleDecoderImpl : public Decoder {
         BranchHintMap func_branch_hints;
         TRACE("DecodeBranchHints[%d] module+%d\n", func_idx,
               static_cast<int>(inner.pc() - inner.start()));
-        for (uint32_t j = 0; inner.ok() && j < num_hints; ++j) {
+        for (uint32_t j = 0; j < num_hints; ++j) {
           uint32_t br_dir = inner.consume_u32v("branch direction");
           uint32_t br_off = inner.consume_u32v("branch instruction offset");
           TRACE("DecodeBranchHints[%d][%d] module+%d\n", func_idx, br_off,
                 static_cast<int>(inner.pc() - inner.start()));
-          WasmBranchHintDirection dir;
+          WasmBranchHint hint;
           switch (br_dir) {
             case 0:
-              dir = WasmBranchHintDirection::kFalse;
+              hint = WasmBranchHint::kUnlikely;
               break;
             case 1:
-              dir = WasmBranchHintDirection::kTrue;
+              hint = WasmBranchHint::kLikely;
               break;
             default:
-              dir = WasmBranchHintDirection::kNoHint;
+              hint = WasmBranchHint::kNoHint;
               inner.errorf(inner.pc(), "Invalid branch hint %#x", br_dir);
               break;
           }
-          if (inner.ok()) {
-            func_branch_hints.insert(br_off, WasmBranchHint{dir});
+          if (!inner.ok()) {
+            break;
           }
+          func_branch_hints.insert(br_off, hint);
         }
-        if (inner.ok()) {
-          branch_hints.emplace(func_idx, std::move(func_branch_hints));
-          module_->branch_hints = std::move(branch_hints);
+        if (!inner.ok()) {
+          break;
         }
+        branch_hints.emplace(func_idx, std::move(func_branch_hints));
       }
-      // Extra unexpected bytes are an error
+      // Extra unexpected bytes are an error.
       if (inner.more()) {
         inner.errorf("Unexpected extra bytes: %d\n",
                      static_cast<int>(inner.pc() - inner.start()));
       }
-      // If something failed, drop all hints parsed so far
-      if (inner.failed()) {
-        module_->branch_hints.clear();
+      // If everything went well, accept the hints for the module.
+      if (inner.ok()) {
+        module_->branch_hints = std::move(branch_hints);
       }
     }
     // Skip the whole branch hints section in the outer decoder.

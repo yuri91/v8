@@ -9,9 +9,7 @@
 #ifndef V8_WASM_GRAPH_BUILDER_INTERFACE_H_
 #define V8_WASM_GRAPH_BUILDER_INTERFACE_H_
 
-#include "src/wasm/branch-hint-map.h"
 #include "src/wasm/decoder.h"
-#include "src/wasm/wasm-module.h"
 #include "src/wasm/wasm-opcodes.h"
 #include "src/wasm/wasm-result.h"
 

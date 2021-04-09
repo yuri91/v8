@@ -9,6 +9,7 @@
 #include "src/handles/handles.h"
 #include "src/objects/objects-inl.h"
 #include "src/utils/ostreams.h"
+#include "src/wasm/branch-hint-map.h"
 #include "src/wasm/decoder.h"
 #include "src/wasm/function-body-decoder-impl.h"
 #include "src/wasm/function-body-decoder.h"
@@ -251,18 +252,18 @@ class WasmGraphBuildingInterface {
   void If(FullDecoder* decoder, const Value& cond, Control* if_block) {
     TFNode* if_true = nullptr;
     TFNode* if_false = nullptr;
-    WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
+    WasmBranchHint hint = WasmBranchHint::kNoHint;
     if (branch_hints_) {
-      dir = branch_hints_->GetHintFor(decoder->pc_relative_offset()).direction;
+      hint = branch_hints_->GetHintFor(decoder->pc_relative_offset());
     }
-    switch (dir) {
-      case WasmBranchHintDirection::kNoHint:
+    switch (hint) {
+      case WasmBranchHint::kNoHint:
         builder_->BranchNoHint(cond.node, &if_true, &if_false);
         break;
-      case WasmBranchHintDirection::kFalse:
+      case WasmBranchHint::kUnlikely:
         builder_->BranchExpectFalse(cond.node, &if_true, &if_false);
         break;
-      case WasmBranchHintDirection::kTrue:
+      case WasmBranchHint::kLikely:
         builder_->BranchExpectTrue(cond.node, &if_true, &if_false);
         break;
     }
@@ -498,18 +499,18 @@ class WasmGraphBuildingInterface {
     SsaEnv* fenv = ssa_env_;
     SsaEnv* tenv = Split(decoder->zone(), fenv);
     fenv->SetNotMerged();
-    WasmBranchHintDirection dir = WasmBranchHintDirection::kNoHint;
+    WasmBranchHint hint = WasmBranchHint::kNoHint;
     if (branch_hints_) {
-      dir = branch_hints_->GetHintFor(decoder->pc_relative_offset()).direction;
+      hint = branch_hints_->GetHintFor(decoder->pc_relative_offset());
     }
-    switch (dir) {
-      case WasmBranchHintDirection::kNoHint:
+    switch (hint) {
+      case WasmBranchHint::kNoHint:
         builder_->BranchNoHint(cond.node, &tenv->control, &fenv->control);
         break;
-      case WasmBranchHintDirection::kFalse:
+      case WasmBranchHint::kUnlikely:
         builder_->BranchExpectFalse(cond.node, &tenv->control, &fenv->control);
         break;
-      case WasmBranchHintDirection::kTrue:
+      case WasmBranchHint::kLikely:
         builder_->BranchExpectTrue(cond.node, &tenv->control, &fenv->control);
         break;
     }
