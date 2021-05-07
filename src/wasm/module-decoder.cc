@@ -1203,8 +1203,15 @@ class ModuleDecoderImpl : public Decoder {
       BranchHintInfo branch_hints;
 
       uint32_t func_count = inner.consume_u32v("number of functions");
+      // Keep track of the previous function index to validate the ordering
+      int64_t last_func_idx = -1;
       for (uint32_t i = 0; i < func_count; i++) {
         uint32_t func_idx = inner.consume_u32v("function index");
+        if (int64_t(func_idx) <= last_func_idx) {
+          inner.errorf("Invalid function index: %d", func_idx);
+          break;
+        }
+        last_func_idx = func_idx;
         uint8_t reserved = inner.consume_u8("reserved byte");
         if (reserved != 0x0) {
           inner.errorf("Invalid reserved byte: %#x", reserved);
@@ -1214,9 +1221,16 @@ class ModuleDecoderImpl : public Decoder {
         BranchHintMap func_branch_hints;
         TRACE("DecodeBranchHints[%d] module+%d\n", func_idx,
               static_cast<int>(inner.pc() - inner.start()));
+        // Keep track of the previous branch offset to validate the ordering
+        int64_t last_br_off = -1;
         for (uint32_t j = 0; j < num_hints; ++j) {
           uint32_t br_dir = inner.consume_u32v("branch direction");
           uint32_t br_off = inner.consume_u32v("branch instruction offset");
+          if (int64_t(br_off) <= last_br_off) {
+            inner.errorf("Invalid branch offset: %d", br_off);
+            break;
+          }
+          last_br_off = br_off;
           TRACE("DecodeBranchHints[%d][%d] module+%d\n", func_idx, br_off,
                 static_cast<int>(inner.pc() - inner.start()));
           WasmBranchHint hint;
