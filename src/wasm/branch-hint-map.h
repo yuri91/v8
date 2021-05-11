@@ -7,6 +7,8 @@
 
 #include <unordered_map>
 
+#include "src/base/macros.h"
+
 namespace v8 {
 namespace internal {
 
